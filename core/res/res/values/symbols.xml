@@ -39,6 +39,8 @@
   <java-symbol type="id" name="action_mode_close_button" />
   <java-symbol type="id" name="activity_chooser_view_content" />
   <java-symbol type="id" name="albumart" />
+  <java-symbol type="id" name="album" />
+  <java-symbol type="id" name="artist" />
   <java-symbol type="id" name="alertTitle" />
   <java-symbol type="id" name="allow_button" />
   <java-symbol type="id" name="alwaysUse" />
@@ -1840,5 +1842,12 @@
   <!-- From Chromium-WebView -->
   <java-symbol type="attr" name="actionModeWebSearchDrawable" />
   <java-symbol type="string" name="websearch" />
+
+  <java-symbol type="string" name="global_action_reboot" />
+  <java-symbol type="string" name="reboot_system" />
+  <java-symbol type="string" name="reboot_progress" />
+  <java-symbol type="drawable" name="ic_lock_reboot" />
+  <!-- Reboot confirmation string -->
+  <java-symbol type="string" name="reboot_confirm" />
 
 </resources>

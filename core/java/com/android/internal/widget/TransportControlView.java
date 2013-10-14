@@ -67,6 +67,8 @@ public class TransportControlView extends FrameLayout implements OnClickListener
 
     private ImageView mAlbumArt;
     private TextView mTrackTitle;
+    private TextView mArtist;
+    private TextView mAlbumTitle;
     private ImageView mBtnPrev;
     private ImageView mBtnPlay;
     private ImageView mBtnNext;
@@ -206,6 +208,8 @@ public class TransportControlView extends FrameLayout implements OnClickListener
     @Override
     public void onFinishInflate() {
         super.onFinishInflate();
+        mArtist = (TextView) findViewById(R.id.artist);
+        mAlbumTitle = (TextView) findViewById(R.id.album);
         mTrackTitle = (TextView) findViewById(R.id.title);
         mTrackTitle.setSelected(true); // enable marquee
         mAlbumArt = (ImageView) findViewById(R.id.albumart);
@@ -267,7 +271,9 @@ public class TransportControlView extends FrameLayout implements OnClickListener
 
     private void updateMetadata(Bundle data) {
         if (mAttached) {
-            mMetadata.artist = getMdString(data, MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
+            mMetadata.artist = getMdString(data, MediaMetadataRetriever.METADATA_KEY_ARTIST);
+            if(TextUtils.isEmpty(mMetadata.artist))
+                mMetadata.artist = getMdString(data, MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
             mMetadata.trackTitle = getMdString(data, MediaMetadataRetriever.METADATA_KEY_TITLE);
             mMetadata.albumTitle = getMdString(data, MediaMetadataRetriever.METADATA_KEY_ALBUM);
             populateMetadata();
@@ -280,34 +286,23 @@ public class TransportControlView extends FrameLayout implements OnClickListener
      * Populates the given metadata into the view
      */
     private void populateMetadata() {
-        StringBuilder sb = new StringBuilder();
-        int trackTitleLength = 0;
-        if (!TextUtils.isEmpty(mMetadata.trackTitle)) {
-            sb.append(mMetadata.trackTitle);
-            trackTitleLength = mMetadata.trackTitle.length();
-        }
         if (!TextUtils.isEmpty(mMetadata.artist)) {
-            if (sb.length() != 0) {
-                sb.append(" - ");
-            }
-            sb.append(mMetadata.artist);
+            mArtist.setText(mMetadata.artist, TextView.BufferType.SPANNABLE);
+            Spannable str = (Spannable) mArtist.getText();
+            str.setSpan(new ForegroundColorSpan(0xffffffff), 0, mArtist.getText().length(),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         if (!TextUtils.isEmpty(mMetadata.albumTitle)) {
-            if (sb.length() != 0) {
-                sb.append(" - ");
-            }
-            sb.append(mMetadata.albumTitle);
-        }
-        mTrackTitle.setText(sb.toString(), TextView.BufferType.SPANNABLE);
-        Spannable str = (Spannable) mTrackTitle.getText();
-        if (trackTitleLength != 0) {
-            str.setSpan(new ForegroundColorSpan(0xffffffff), 0, trackTitleLength,
+            mAlbumTitle.setText(mMetadata.albumTitle, TextView.BufferType.SPANNABLE);
+            Spannable str = (Spannable) mAlbumTitle.getText();
+            str.setSpan(new ForegroundColorSpan(0xffffffff), 0, mAlbumTitle.getText().length(),
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            trackTitleLength++;
         }
-        if (sb.length() > trackTitleLength) {
-            str.setSpan(new ForegroundColorSpan(0x7fffffff), trackTitleLength, sb.length(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        if (!TextUtils.isEmpty(mMetadata.trackTitle)) {
+            mTrackTitle.setText(mMetadata.trackTitle, TextView.BufferType.NORMAL);
+            //Spannable str = (Spannable) mTrackTitle.getText();
+            //str.setSpan(new ForegroundColorSpan(0xffffffff), 0, mTrackTitle.getText().length(),
+            //        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
         mAlbumArt.setImageBitmap(mMetadata.bitmap);

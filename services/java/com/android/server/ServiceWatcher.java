@@ -181,7 +181,7 @@ public class ServiceWatcher implements ServiceConnection {
                     if (!isSignatureMatch(pInfo.signatures)) {
                         Log.w(mTag, packageName + " resolves service " + mAction
                                 + ", but has wrong signature, ignoring");
-                        continue;
+                        //continue;
                     }
                 } catch (NameNotFoundException e) {
                     Log.wtf(mTag, e);

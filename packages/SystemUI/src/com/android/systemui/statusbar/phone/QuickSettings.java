@@ -376,38 +376,75 @@ class QuickSettings {
     }
 
     private void addSystemTiles(ViewGroup parent, LayoutInflater inflater) {
+        // Battery
+        final QuickSettingsBasicTile batteryTile = new QuickSettingsBasicTile(mContext);
+        batteryTile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startSettingsActivity(Intent.ACTION_POWER_USAGE_SUMMARY);
+            }
+        });
+        mModel.addBatteryTile(batteryTile, new QuickSettingsModel.RefreshCallback() {
+            @Override
+            public void refreshView(QuickSettingsTileView unused, State state) {
+                QuickSettingsModel.BatteryState batteryState =
+                        (QuickSettingsModel.BatteryState) state;
+                Drawable d = batteryState.pluggedIn
+                        ? mChargingBatteryLevels
+                        : mBatteryLevels;
+                String t;
+                if (batteryState.batteryLevel == 100) {
+                    t = mContext.getString(R.string.quick_settings_battery_charged_label);
+                } else {
+                    t = batteryState.pluggedIn
+                        ? mContext.getString(R.string.quick_settings_battery_charging_label,
+                                batteryState.batteryLevel)
+                        : mContext.getString(R.string.status_bar_settings_battery_meter_format,
+                                batteryState.batteryLevel);
+                }
+                batteryTile.setImageDrawable(d);
+                batteryTile.getImageView().setImageLevel(batteryState.batteryLevel);
+                batteryTile.setText(t);
+                batteryTile.setContentDescription(
+                        mContext.getString(R.string.accessibility_quick_settings_battery, t));
+            }
+        });
+        parent.addView(batteryTile);
+
         // Wi-fi
         final QuickSettingsBasicTile wifiTile
                 = new QuickSettingsBasicTile(mContext);
         wifiTile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity(android.provider.Settings.ACTION_WIFI_SETTINGS);
+                final boolean enable =
+                        (mWifiManager.getWifiState() != WifiManager.WIFI_STATE_ENABLED);
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... args) {
+                        // Disable tethering if enabling Wifi
+                        final int wifiApState = mWifiManager.getWifiApState();
+                        if (enable && ((wifiApState == WifiManager.WIFI_AP_STATE_ENABLING) ||
+                                       (wifiApState == WifiManager.WIFI_AP_STATE_ENABLED))) {
+                            mWifiManager.setWifiApEnabled(null, false);
+                        }
+
+                        mWifiManager.setWifiEnabled(enable);
+                        return null;
+                    }
+                }.execute();
+                wifiTile.setPressed(false);
+                //return true;
             }
         });
         if (LONG_PRESS_TOGGLES) {
             wifiTile.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    final boolean enable =
-                            (mWifiManager.getWifiState() != WifiManager.WIFI_STATE_ENABLED);
-                    new AsyncTask<Void, Void, Void>() {
-                        @Override
-                        protected Void doInBackground(Void... args) {
-                            // Disable tethering if enabling Wifi
-                            final int wifiApState = mWifiManager.getWifiApState();
-                            if (enable && ((wifiApState == WifiManager.WIFI_AP_STATE_ENABLING) ||
-                                           (wifiApState == WifiManager.WIFI_AP_STATE_ENABLED))) {
-                                mWifiManager.setWifiApEnabled(null, false);
-                            }
-
-                            mWifiManager.setWifiEnabled(enable);
-                            return null;
-                        }
-                    }.execute();
-                    wifiTile.setPressed(false);
+                    startSettingsActivity(android.provider.Settings.ACTION_WIFI_SETTINGS);
                     return true;
-                }} );
+                }
+            });
         }
         mModel.addWifiTile(wifiTile, new QuickSettingsModel.RefreshCallback() {
             @Override
@@ -481,59 +518,6 @@ class QuickSettings {
             parent.addView(rotationLockTile);
         }
 
-        // Battery
-        final QuickSettingsBasicTile batteryTile = new QuickSettingsBasicTile(mContext);
-        batteryTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startSettingsActivity(Intent.ACTION_POWER_USAGE_SUMMARY);
-            }
-        });
-        mModel.addBatteryTile(batteryTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView unused, State state) {
-                QuickSettingsModel.BatteryState batteryState =
-                        (QuickSettingsModel.BatteryState) state;
-                Drawable d = batteryState.pluggedIn
-                        ? mChargingBatteryLevels
-                        : mBatteryLevels;
-                String t;
-                if (batteryState.batteryLevel == 100) {
-                    t = mContext.getString(R.string.quick_settings_battery_charged_label);
-                } else {
-                    t = batteryState.pluggedIn
-                        ? mContext.getString(R.string.quick_settings_battery_charging_label,
-                                batteryState.batteryLevel)
-                        : mContext.getString(R.string.status_bar_settings_battery_meter_format,
-                                batteryState.batteryLevel);
-                }
-                batteryTile.setImageDrawable(d);
-                batteryTile.getImageView().setImageLevel(batteryState.batteryLevel);
-                batteryTile.setText(t);
-                batteryTile.setContentDescription(
-                        mContext.getString(R.string.accessibility_quick_settings_battery, t));
-            }
-        });
-        parent.addView(batteryTile);
-
-        // Airplane Mode
-        final QuickSettingsBasicTile airplaneTile
-                = new QuickSettingsBasicTile(mContext);
-        mModel.addAirplaneModeTile(airplaneTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView unused, State state) {
-                airplaneTile.setImageResource(state.iconId);
-
-                String airplaneState = mContext.getString(
-                        (state.enabled) ? R.string.accessibility_desc_on
-                                : R.string.accessibility_desc_off);
-                airplaneTile.setContentDescription(
-                        mContext.getString(R.string.accessibility_quick_settings_airplane, airplaneState));
-                airplaneTile.setText(state.label);
-            }
-        });
-        parent.addView(airplaneTile);
-
         // Bluetooth
         if (mModel.deviceSupportsBluetooth()
                 || DEBUG_GONE_TILES) {
@@ -587,6 +571,23 @@ class QuickSettings {
             parent.addView(bluetoothTile);
         }
 
+        //Airplane Mode
+        final QuickSettingsBasicTile airplaneTile
+                = new QuickSettingsBasicTile(mContext);
+        mModel.addAirplaneModeTile(airplaneTile, new QuickSettingsModel.RefreshCallback() {
+            @Override
+            public void refreshView(QuickSettingsTileView unused, State state) {
+                airplaneTile.setImageResource(state.iconId);
+
+                String airplaneState = mContext.getString(
+                        (state.enabled) ? R.string.accessibility_desc_on
+                                : R.string.accessibility_desc_off);
+                airplaneTile.setContentDescription(
+                        mContext.getString(R.string.accessibility_quick_settings_airplane, airplaneState));
+                airplaneTile.setText(state.label);
+            }
+        });
+        parent.addView(airplaneTile);
     }
 
     private void addTemporaryTiles(final ViewGroup parent, final LayoutInflater inflater) {

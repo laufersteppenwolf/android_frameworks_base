@@ -228,6 +228,7 @@ public class SignalStrength implements Parcelable {
         mLteRssnr = lteRssnr;
         mLteCqi = lteCqi;
         isGsm = gsm;
+        enforceGsmValues();
         if (DBG) log("initialize: " + toString());
     }
 
@@ -248,6 +249,7 @@ public class SignalStrength implements Parcelable {
         mLteRssnr = s.mLteRssnr;
         mLteCqi = s.mLteCqi;
         isGsm = s.isGsm;
+        enforceGsmValues();
     }
 
     /**
@@ -271,6 +273,7 @@ public class SignalStrength implements Parcelable {
         mLteRssnr = in.readInt();
         mLteCqi = in.readInt();
         isGsm = (in.readInt() != 0);
+        enforceGsmValues();
     }
 
     /**
@@ -918,7 +921,25 @@ public class SignalStrength implements Parcelable {
         mLteRssnr = m.getInt("LteRssnr");
         mLteCqi = m.getInt("LteCqi");
         isGsm = m.getBoolean("isGsm");
+        enforceGsmValues();
     }
+
+
+    /* Forecefully correct the values reported from RILC
+    ** this will invalidate all nonGSM values */
+    private void enforceGsmValues() {
+        mCdmaDbm = -1;
+        mCdmaEcio = -1;
+        mEvdoDbm = -1;
+        mEvdoEcio = -1;
+        mEvdoSnr = -1;
+        mLteSignalStrength = 99;
+        mLteRsrp = INVALID;
+        mLteRsrq = INVALID;
+        mLteRssnr = INVALID;
+        mLteCqi = INVALID;
+    }
+
 
     /**
      * Set intent notifier Bundle based on SignalStrength
